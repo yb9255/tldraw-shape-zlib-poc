@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
-import db from "../../../../initdb";
-import msgpack from "msgpack-lite";
-import zlib from "zlib";
+import { NextRequest, NextResponse } from 'next/server';
+import db from '../../../../initdb';
+import msgpack from 'msgpack-lite';
+import zlib from 'zlib';
 
 const compress = (data: Buffer) => zlib.deflateSync(data);
 
@@ -14,35 +14,29 @@ const deserialize = (data: Buffer) => msgpack.decode(data);
 const ID = 0;
 
 export async function GET() {
-  const prepared = db.prepare("SELECT * from shapes WHERE id = ?");
+  const prepared = db.prepare('SELECT * from shapes WHERE id = ?');
 
   const shapes = prepared.get(ID) as {
     id: number;
     buffer: Buffer | null;
   } | null;
 
-  console.log("shapes: ", shapes);
-
   if (!shapes) {
     return NextResponse.json({
       data: shapes,
-      message: "데이터 없음",
+      message: '데이터 없음',
     });
   }
 
   const decompressedData = shapes.buffer ? decompress(shapes.buffer) : null;
 
-  console.log("decompressedData: ", decompressedData);
-
   const deserializedData = decompressedData
     ? deserialize(decompressedData)
     : null;
 
-  console.log("deserializedData: ", deserializedData);
-
   return NextResponse.json({
-    message: "데이터 있음.",
-    data: { id: 0, data: deserializedData },
+    message: '데이터 있음.',
+    data: { id: 0, shapes: deserializedData },
   });
 }
 
@@ -56,15 +50,15 @@ export async function PUT(request: NextRequest) {
     serializedData !== null ? compress(Buffer.from(serializedData)) : null;
 
   if (compressedData) {
-    console.log("msgpack / zlib buffer size", compressedData.length);
+    console.log('msgpack / zlib buffer size', compressedData.length);
   }
 
-  const prepared = db.prepare("UPDATE shapes SET buffer = ? WHERE id = ?");
+  const prepared = db.prepare('UPDATE shapes SET buffer = ? WHERE id = ?');
   const info = prepared.run(compressedData, ID);
 
   if (info.changes === 0) {
     return NextResponse.json(
-      { message: "업데이트할 데이터 없음", data: null },
+      { message: '업데이트할 데이터 없음', data: null },
       { status: 404 }
     );
   }
@@ -77,6 +71,6 @@ export async function PUT(request: NextRequest) {
           ? Array.from(new Uint8Array(compressedData))
           : null,
     },
-    message: "업데이트 완료",
+    message: '업데이트 완료',
   });
 }

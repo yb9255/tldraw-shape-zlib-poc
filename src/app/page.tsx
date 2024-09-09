@@ -1,11 +1,12 @@
-"use client";
+'use client';
 
-import { useRef, useEffect, useState } from "react";
-import { type Editor, Tldraw, type TLShape } from "tldraw";
-import debounce from "lodash.debounce";
+import { useRef, useEffect, useState } from 'react';
+import { type Editor, Tldraw, type TLShape } from 'tldraw';
+import debounce from 'lodash.debounce';
 
 function App() {
   const appRef = useRef<Editor | null>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -13,18 +14,21 @@ function App() {
       setLoading(true);
 
       try {
-        const response = await fetch("/api/shapes", {
-          method: "GET",
+        const response = await fetch('/api/shapes', {
+          method: 'GET',
         });
+
         const data = await response.json();
+
         if (data?.data) {
-          const shapes = data.data as TLShape[];
+          const shapes = data.data.shapes as TLShape[];
+
           if (appRef.current) {
             appRef.current.createShapes(shapes);
           }
         }
       } catch (error) {
-        console.error("Error fetching shapes:", error);
+        console.error('Error fetching shapes:', error);
       }
 
       setLoading(false);
@@ -37,35 +41,45 @@ function App() {
     if (!appRef.current) return;
 
     const shapes = appRef.current.getCurrentPageShapes();
+
     try {
-      const response = await fetch("/api/shapes", {
-        method: "PUT",
+      const response = await fetch('/api/shapes', {
+        method: 'PUT',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({ data: shapes }),
       });
+
       if (!response.ok) {
-        console.error("Error saving shapes to server");
-      } else {
-        console.log("Shapes saved to server");
+        throw new Error('Error saving shapes to server');
       }
+
+      console.log('Shapes saved to server');
     } catch (error) {
-      console.error("Error saving shapes:", error);
+      console.error('Error saving shapes:', error);
     }
-  }, 1000);
+  }, 100);
 
   if (loading) return <h2>loading...</h2>;
 
   return (
-    <div style={{ height: "100vh", width: "100vw" }}>
+    <div style={{ height: '100vh', width: '100vw' }} ref={wrapperRef}>
       <Tldraw
         forceMobile
         autoFocus={false}
-        onMount={(app) => {
-          appRef.current = app;
+        onMount={(editor) => {
+          appRef.current = editor;
 
-          app.on("change", saveShapesToServer);
+          editor.sideEffects.registerAfterChangeHandler('shape', () => {
+            console.log('register after changed');
+            saveShapesToServer();
+          });
+
+          editor.sideEffects.registerAfterDeleteHandler('shape', () => {
+            console.log('register after deleted');
+            saveShapesToServer();
+          });
         }}
       />
     </div>
