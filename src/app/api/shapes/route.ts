@@ -3,15 +3,12 @@ import db from '../../../../initdb';
 import msgpack from 'msgpack-lite';
 import zlib from 'zlib';
 
-const compress = (data: Buffer) => zlib.deflateSync(data);
-
-const decompress = (data: Buffer) => zlib.inflateSync(data);
-
-const serialize = (data: unknown) => msgpack.encode(data);
-
-const deserialize = (data: Buffer) => msgpack.decode(data);
-
 const ID = 0;
+
+const compress = (data: Buffer) => zlib.deflateSync(data);
+const decompress = (data: Buffer) => zlib.inflateSync(data);
+const serialize = (data: unknown) => msgpack.encode(data);
+const deserialize = (data: Buffer) => msgpack.decode(data);
 
 export async function GET() {
   const prepared = db.prepare('SELECT * from shapes WHERE id = ?');

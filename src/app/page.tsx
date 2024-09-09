@@ -54,8 +54,6 @@ function App() {
       if (!response.ok) {
         throw new Error('Error saving shapes to server');
       }
-
-      console.log('Shapes saved to server');
     } catch (error) {
       console.error('Error saving shapes:', error);
     }
@@ -71,15 +69,15 @@ function App() {
         onMount={(editor) => {
           appRef.current = editor;
 
-          editor.sideEffects.registerAfterChangeHandler('shape', () => {
-            console.log('register after changed');
-            saveShapesToServer();
-          });
+          editor.sideEffects.registerAfterChangeHandler(
+            'shape',
+            saveShapesToServer
+          );
 
-          editor.sideEffects.registerAfterDeleteHandler('shape', () => {
-            console.log('register after deleted');
-            saveShapesToServer();
-          });
+          editor.sideEffects.registerAfterDeleteHandler(
+            'shape',
+            saveShapesToServer
+          );
         }}
       />
     </div>
