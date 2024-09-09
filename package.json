@@ -9,16 +9,24 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "better-sqlite3": "^11.2.1",
+    "lodash.debounce": "^4.0.8",
+    "msgpack-lite": "^0.1.26",
+    "next": "14.2.8",
     "react": "^18",
     "react-dom": "^18",
-    "next": "14.2.8"
+    "tldraw": "^2.4.6",
+    "zlib": "^1.0.5"
   },
   "devDependencies": {
-    "typescript": "^5",
+    "@types/better-sqlite3": "^7.6.11",
+    "@types/lodash.debounce": "^4.0.9",
+    "@types/msgpack-lite": "^0.1.11",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "eslint": "^8",
-    "eslint-config-next": "14.2.8"
+    "eslint-config-next": "14.2.8",
+    "typescript": "^5"
   }
 }
