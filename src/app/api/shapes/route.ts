@@ -13,45 +13,56 @@ const deserialize = (data: Buffer) => msgpack.decode(data);
 export async function GET() {
   const prepared = db.prepare('SELECT * from shapes WHERE id = ?');
 
-  const shapes = prepared.get(ID) as {
+  const data = prepared.get(ID) as {
     id: number;
     buffer: Buffer | null;
+    vw: number | null;
+    vh: number | null;
   } | null;
 
-  if (!shapes) {
+  if (!data) {
     return NextResponse.json({
-      data: shapes,
+      shapes: null,
+      vh: null,
+      vw: null,
       message: '데이터 없음',
     });
   }
 
-  const decompressedData = shapes.buffer ? decompress(shapes.buffer) : null;
+  const { buffer, vw, vh } = data;
 
-  const deserializedData = decompressedData
-    ? deserialize(decompressedData)
+  const decompressedShapes = buffer ? decompress(buffer) : null;
+
+  const deserializedShapes = decompressedShapes
+    ? deserialize(decompressedShapes)
     : null;
 
   return NextResponse.json({
     message: '데이터 있음.',
-    data: { id: 0, shapes: deserializedData },
+    id: 0,
+    shapes: deserializedShapes,
+    vw,
+    vh,
   });
 }
 
 export async function PUT(request: NextRequest) {
   const updatedShape = await request.json();
-  const { data } = updatedShape;
+  const { shapes, vw, vh } = updatedShape;
 
-  const serializedData = data !== null ? serialize(data) : null;
+  const serializedShapes = shapes !== null ? serialize(shapes) : null;
 
-  const compressedData =
-    serializedData !== null ? compress(Buffer.from(serializedData)) : null;
+  const compressedShapes =
+    serializedShapes !== null ? compress(Buffer.from(serializedShapes)) : null;
 
-  if (compressedData) {
-    console.log('msgpack / zlib buffer size', compressedData.length);
+  if (compressedShapes) {
+    console.log('msgpack / zlib buffer size', compressedShapes.length);
   }
 
-  const prepared = db.prepare('UPDATE shapes SET buffer = ? WHERE id = ?');
-  const info = prepared.run(compressedData, ID);
+  const prepared = db.prepare(
+    'UPDATE shapes SET buffer = ?, vw = ?, vh = ? WHERE id = ?'
+  );
+  const info = prepared.run(compressedShapes, vw, vh, ID);
 
   if (info.changes === 0) {
     return NextResponse.json(
@@ -61,13 +72,8 @@ export async function PUT(request: NextRequest) {
   }
 
   return NextResponse.json({
-    data: {
-      id: ID,
-      buffer:
-        compressedData !== null
-          ? Array.from(new Uint8Array(compressedData))
-          : null,
-    },
+    id: ID,
+    buffer: compressedShapes !== null ? compressedShapes : null,
     message: '업데이트 완료',
   });
 }
