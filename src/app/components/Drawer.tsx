@@ -7,28 +7,37 @@ import { type Editor, Tldraw, TLShape } from "tldraw";
 type Props = {
   data: {
     shapes: TLShape[] | null;
-    vw: number | null;
-    vh: number | null;
+    prevCenterX: number | null;
+    prevCenterY: number | null;
   } | null;
 };
 
-const resizeShapes = ({
-  shapes,
-  vw,
-  vh,
-  editor,
-}: {
-  shapes: TLShape[];
-  vw: number;
-  vh: number;
+type Params = {
+  prevCenterX: number;
+  prevCenterY: number;
   editor: Editor;
-}) => {
-  const currentVw = window.innerWidth;
-  const currentVh = window.innerHeight;
+  shapes: TLShape[];
+};
 
-  shapes.forEach((shape) => {
-    editor.resizeShape(shape, { x: currentVw / vw, y: currentVh / vh });
+const updateShapesLayout = ({
+  prevCenterX,
+  prevCenterY,
+  editor,
+  shapes,
+}: Params) => {
+  const centerXOffset = window.innerWidth / 2 - prevCenterX;
+  const centerYOffset = window.innerHeight / 2 - prevCenterY;
+
+  const newShapes = shapes.map((shape) => {
+    return {
+      ...shape,
+      x: shape.x - centerXOffset,
+      y: shape.y - centerYOffset,
+    };
   });
+
+  editor.updateShapes(newShapes);
+  editor.resetZoom();
 };
 
 const Drawer = ({ data }: Props) => {
@@ -37,42 +46,26 @@ const Drawer = ({ data }: Props) => {
   useEffect(() => {
     if (!editor || !data) return;
 
-    const shapes = data.shapes as TLShape[] | null;
-    const vw = data.vw as number | null;
-    const vh = data.vh as number | null;
+    const { shapes, prevCenterX, prevCenterY } = data;
 
-    if (editor && shapes && vw && vh) {
+    if (editor && shapes && prevCenterX && prevCenterY) {
       editor.createShapes(shapes);
-      resizeShapes({ editor, shapes, vw, vh });
-      editor.zoomToFit();
+      updateShapesLayout({ editor, shapes, prevCenterX, prevCenterY });
     }
   }, [editor, data]);
 
   const saveShapesToServer = debounce(async (editor: Editor) => {
     const shapes = editor.getCurrentPageShapes();
 
-    try {
-      const response = await fetch("/api/shapes", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          shapes,
-          vw: window.innerWidth,
-          vh: window.innerHeight,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Error saving shapes to server");
-      }
-    } catch (error) {
-      console.error("Error saving shapes:", error);
-    }
-  }, 100);
-
-  if (!data) return;
+    localStorage.setItem(
+      "prevShapes",
+      JSON.stringify({
+        shapes,
+        prevCenterX: window.innerWidth / 2,
+        prevCenterY: window.innerHeight / 2,
+      })
+    );
+  }, 230);
 
   return (
     <div style={{ height: "100vh", width: "100vw" }}>

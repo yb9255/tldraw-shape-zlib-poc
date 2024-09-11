@@ -1,44 +1,31 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { type TLShape } from "tldraw";
 import { Drawer } from "./components";
+import { useEffect, useState } from "react";
 
 function App() {
-  const [loading, setLoading] = useState(false);
   const [data, setData] = useState<{
     shapes: TLShape[] | null;
-    vw: number | null;
-    vh: number | null;
+    prevCenterX: number | null;
+    prevCenterY: number | null;
   } | null>(null);
 
   useEffect(() => {
-    const fetchShapes = async () => {
-      setLoading(true);
+    if (typeof localStorage !== "undefined") {
+      const json = localStorage.getItem("prevShapes");
 
-      try {
-        const response = await fetch("/api/shapes", {
-          method: "GET",
-        });
-
-        const data = (await response.json()) as {
+      if (json) {
+        const savedData = JSON.parse(json) as {
           shapes: TLShape[] | null;
-          vw: number | null;
-          vh: number | null;
+          prevCenterX: number | null;
+          prevCenterY: number | null;
         };
 
-        setData(data);
-      } catch (error) {
-        console.error("Error fetching shapes:", error);
+        setData(savedData);
       }
-
-      setLoading(false);
-    };
-
-    fetchShapes();
+    }
   }, []);
-
-  if (loading) return <h2>loading...</h2>;
 
   return (
     <div style={{ height: "100vh", width: "100vw" }}>
