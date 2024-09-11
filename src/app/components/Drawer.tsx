@@ -48,9 +48,7 @@ const Drawer = ({ data }: Props) => {
     }
   }, [editor, data]);
 
-  const saveShapesToServer = debounce(async () => {
-    if (!editor) return;
-
+  const saveShapesToServer = debounce(async (editor: Editor) => {
     const shapes = editor.getCurrentPageShapes();
 
     try {
@@ -84,14 +82,12 @@ const Drawer = ({ data }: Props) => {
         onMount={(editor) => {
           setEditor(editor);
 
-          editor.sideEffects.registerAfterChangeHandler(
-            "shape",
-            saveShapesToServer
+          editor.sideEffects.registerAfterChangeHandler("shape", () =>
+            saveShapesToServer(editor)
           );
 
-          editor.sideEffects.registerAfterDeleteHandler(
-            "shape",
-            saveShapesToServer
+          editor.sideEffects.registerAfterDeleteHandler("shape", () =>
+            saveShapesToServer(editor)
           );
         }}
       />
